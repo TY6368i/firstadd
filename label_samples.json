@@ -1,0 +1,102 @@
+[
+  {
+    "cat": "3×3 grid selection",
+    "file": "instruction.txt",
+    "sample": "\nPlease click the car in the 3x3 grid\nPosition coordinates: [4, 6, 8]"
+  },
+  {
+    "cat": "3×3 jigsaw-swap selection",
+    "file": "01.txt",
+    "sample": "\nPlease click on the two misplaced tiles in the nine-square grid to restore them\n\n1   0"
+  },
+  {
+    "cat": "alignment sliders",
+    "file": "captcha_data_processed3(1).csv",
+    "sample": "\"id\",\"data_id\",\"group_index\",\"type\",\"bg_img_path\",\"template_img_path\",\"event_type\",\"x\",\"y\",\"t\",\"speed\",\"acceleration\",\"jitter_frequency\"\n\"1\",\"1746521268\",\"0\",\"SLIDER\",\"1746521268_SLIDER_bg.png\",\"17465"
+  },
+  {
+    "cat": "arithmetic‐character CAPTCHA",
+    "file": "0+0+0-7=-7.txt",
+    "sample": "\nPlease calculate the result in the image\n: -7\nresult: minus Seven"
+  },
+  {
+    "cat": "arithmetic‐selection",
+    "file": "1000.txt",
+    "sample": "，1000。\nClick on the three numbers in the image so that they add up to 1000\n 349: (16, 19, 80, 48)\n 339: (3, 122, 67, 151)\n 312: (15, 159, 79, 188)\n"
+  },
+  {
+    "cat": "brightness discrimination",
+    "file": "001.txt",
+    "sample": "。\nPlease click the darkest and brightest stars in the image.\n\n(141, 58, 175, 92)\n (146, 132, 206, 192)\n"
+  },
+  {
+    "cat": "classic character CAPTCHA",
+    "file": null,
+    "sample": null
+  },
+  {
+    "cat": "color discrimination",
+    "file": "0_1.txt",
+    "sample": "。\nPlease click on the pink star in the image.\n(144, 82) to (176, 114)"
+  },
+  {
+    "cat": "commonsense reasoning",
+    "file": "logical_qa_pairs.csv",
+    "sample": "question,answer\n\"If X = 10 and Y = 6, is X greater than Y?\",Yes\n\"Either John is at home or he is at the office. If not John is at home, then what?\",he is at the office\n\"If the light is on, then what h"
+  },
+  {
+    "cat": "distorted‐word CAPTCHA",
+    "file": "generated_text.txt",
+    "sample": "，\nPlease write two English words in the picture, where the second word is repeated\nuniverse rainbow\n"
+  },
+  {
+    "cat": "full-image grid selection",
+    "file": "012345.txt",
+    "sample": "  。\nPlease click the parts of the grid that contain a sheep.\n0,1,2,3,4,5\n"
+  },
+  {
+    "cat": "geometric‐shape recognition",
+    "file": "circle_100.txt",
+    "sample": "。\nPlease click on all the circles in the image.\n(106, 110, 148, 152)\n(89, 32, 144, 87)\n"
+  },
+  {
+    "cat": "hollow‐pattern recognition",
+    "file": "output.txt",
+    "sample": "。\nPlease click on all the hollow shapes in the image.\n\n(71, 149, 112, 190)\n(138, 91, 184, 137)\n"
+  },
+  {
+    "cat": "inverted‐letter selection",
+    "file": "00000.txt",
+    "sample": "Pick out all the upside down letters in the picture.\nresults:\n(128,177,172,218);\n(137,40,181,79);\n(65,29,109,68);\n"
+  },
+  {
+    "cat": "rotated‐letter selection",
+    "file": "A.txt",
+    "sample": "79。\nPlease click on the capital letter in the image that rotates counterclockwise by 79 degrees\n(156, 44, 192, 77)\n"
+  },
+  {
+    "cat": "rotation‐block",
+    "file": "captcha_data_processed3(1).csv",
+    "sample": "\"id\",\"data_id\",\"group_index\",\"type\",\"bg_img_path\",\"template_img_path\",\"event_type\",\"x\",\"y\",\"t\",\"speed\",\"acceleration\",\"jitter_frequency\"\n\"1\",\"1746521268\",\"0\",\"SLIDER\",\"1746521268_SLIDER_bg.png\",\"17465"
+  },
+  {
+    "cat": "sequential‐letter ordering",
+    "file": "ABD.txt",
+    "sample": " ABD .\nPlease click on ABD in turn.\nA (159, 92, 191, 138)\nB (32, 51, 68, 101)\nD (173, 39, 203, 77)\n"
+  },
+  {
+    "cat": "sliding‐block",
+    "file": "captcha_data_processed3(1).csv",
+    "sample": "\"id\",\"data_id\",\"group_index\",\"type\",\"bg_img_path\",\"template_img_path\",\"event_type\",\"x\",\"y\",\"t\",\"speed\",\"acceleration\",\"jitter_frequency\"\n\"1\",\"1746521268\",\"0\",\"SLIDER\",\"1746521268_SLIDER_bg.png\",\"17465"
+  },
+  {
+    "cat": "text‐based arithmetic",
+    "file": "math_captcha_data.csv",
+    "sample": "question,answer\n2 × 17 = ?,34\n19 - 8 = ?,11\n8 + 8 = ?,16\n(6 + 6) ÷ 2 = ?,6\n10 + 12 = ?,22\n15 - 2 = ?,13\n19 + 14 = ?,33\n2 + 17 = ?,19\n11 - 7 = ?,4\n20 ÷ 1 = ?,20\n9 - 9 = ?,0\n2 × 7 = ?,14\n19 + 16 = ?,35\n"
+  },
+  {
+    "cat": "vowel selection",
+    "file": "vowel_1.txt",
+    "sample": "Please click on all vowel letters in the image.\n。\nE: (157, 84, 186, 119)\nI: (21, 127, 31, 156)\n"
+  }
+]

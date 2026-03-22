@@ -33,7 +33,7 @@ const items: CaptchaItem[] = [
   },
   {
     title: 'MCA-Bench (20종목)',
-    desc: 'Kaggle MCA-Bench 데이터셋 기반. 3×3 그리드, 슬라이더, 문자 인식 등 20가지 캡차 종목별 연습.',
+    desc: 'Kaggle 데이터 기반. 종목별 한글 설명, 과제 지시, 3×3 선택·클릭 영역·텍스트 정답 채점 및 정답 보기.',
     to: '/captcha/mca',
     live: true,
     tag: 'MCA-Bench',

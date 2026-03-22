@@ -19,15 +19,52 @@ except ImportError:
     print("kagglehub가 필요합니다: pip install kagglehub")
     exit(1)
 
+_SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+if _SCRIPT_DIR not in sys.path:
+    sys.path.insert(0, _SCRIPT_DIR)
+from mca_label_parser import build_puzzle  # noqa: E402
+
 # 프로젝트 루트
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PUBLIC_CAPTCHA = os.path.join(PROJECT_ROOT, "HT", "public", "captcha-data")
 SAMPLE_PER_CATEGORY = 30  # 종목당 복사할 샘플 수
+TEXT_SAMPLE_ROWS = 20  # 텍스트 전용 종목(CSV) 샘플 수
 
 
 def slugify(name: str) -> str:
     """폴더명을 URL-safe slug로 변환"""
     return name.replace(" ", "-").replace("×", "x").replace("‐", "-").lower()
+
+
+def load_csv_qa(dataset_path: str, category_name: str, max_rows: int) -> list[dict]:
+    """commonsense / text arithmetic 등 CSV 질문·답 로드."""
+    import csv
+
+    cat_path = os.path.join(dataset_path, category_name)
+    if not os.path.isdir(cat_path):
+        return []
+    csv_name = None
+    for f in os.listdir(cat_path):
+        if f.lower().endswith(".csv"):
+            csv_name = f
+            break
+    if not csv_name:
+        return []
+    path = os.path.join(cat_path, csv_name)
+    rows: list[dict] = []
+    try:
+        with open(path, "r", encoding="utf-8", errors="replace", newline="") as fp:
+            reader = csv.DictReader(fp)
+            for i, row in enumerate(reader):
+                if i >= max_rows:
+                    break
+                q = (row.get("question") or row.get("Question") or "").strip()
+                a = (row.get("answer") or row.get("Answer") or "").strip()
+                if q and a:
+                    rows.append({"question": q, "answer": a})
+    except OSError:
+        return []
+    return rows
 
 
 def main():
@@ -74,6 +111,7 @@ def main():
         samples = random.sample(all_files, sample_count)
 
         copied_files = []
+        puzzles: list[dict] = []
         seen_basenames = {}
         for f in samples:
             src = os.path.join(cat_path, f)
@@ -89,6 +127,9 @@ def main():
             try:
                 shutil.copy2(src, dst)
                 copied_files.append(out_name)
+                pz = build_puzzle(cat_path, f, slug)
+                pz["file"] = out_name
+                puzzles.append(pz)
             except Exception as e:
                 print(f"   복사 실패 {out_name}: {e}")
 
@@ -99,16 +140,39 @@ def main():
             "count": len(copied_files),
             "total": len(all_files),
             "files": copied_files,
+            "puzzles": puzzles,
         })
         print(f"   {category_name}: {len(copied_files)}개 복사 (총 {len(all_files)}개 중)")
+
+    # 텍스트 전용 종목 (이미지 없음)
+    text_categories: list[dict] = []
+    for tname in ("commonsense reasoning", "text‐based arithmetic"):
+        tslug = slugify(tname)
+        items = load_csv_qa(dataset_path, tname, TEXT_SAMPLE_ROWS)
+        if items:
+            text_categories.append({
+                "key": tslug,
+                "name": tname,
+                "label": tname,
+                "kind": "text",
+                "count": len(items),
+                "total": len(items),
+                "items": items,
+            })
+            print(f"   (텍스트) {tname}: {len(items)}개 Q&A")
 
     # 메타데이터 저장
     meta_path = os.path.join(PUBLIC_CAPTCHA, "manifest.json")
     with open(meta_path, "w", encoding="utf-8") as f:
-        json.dump({"categories": categories_meta}, f, ensure_ascii=False, indent=2)
+        json.dump(
+            {"categories": categories_meta, "textCategories": text_categories},
+            f,
+            ensure_ascii=False,
+            indent=2,
+        )
 
     print(f"\n완료! 메타데이터: {meta_path}")
-    print(f"총 {len(categories_meta)}개 종목 준비됨.")
+    print(f"총 {len(categories_meta)}개 이미지 종목 + {len(text_categories)}개 텍스트 종목.")
 
 
 if __name__ == "__main__":

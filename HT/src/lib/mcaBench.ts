@@ -3,6 +3,23 @@
  * Kaggle: luffy798/mca-benchmultimodal-captchas
  */
 
+export type MCAPuzzle = {
+  file: string
+  instructionEn: string
+  interaction:
+    | 'grid_3x3'
+    | 'grid_3x3_two'
+    | 'text'
+    | 'click_boxes'
+    | 'browse'
+    | 'info'
+  gridIndices?: number[]
+  boxes?: number[][]
+  expectedText?: string
+  answerHint?: string
+  labelFile?: string
+}
+
 export type MCACategory = {
   key: string
   name: string
@@ -10,13 +27,25 @@ export type MCACategory = {
   count: number
   total: number
   files?: string[]
+  puzzles?: MCAPuzzle[]
+}
+
+export type MCATextCategory = {
+  key: string
+  name: string
+  label: string
+  kind: 'text'
+  count: number
+  total: number
+  items: { question: string; answer: string }[]
 }
 
 export type MCAManifest = {
   categories: MCACategory[]
+  textCategories?: MCATextCategory[]
 }
 
-const CAPTCHA_DATA_BASE = "/captcha-data"
+const CAPTCHA_DATA_BASE = '/captcha-data'
 
 export function getImageUrl(categoryKey: string, filename: string): string {
   return `${CAPTCHA_DATA_BASE}/${categoryKey}/${filename}`
