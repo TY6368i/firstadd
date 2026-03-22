@@ -4,6 +4,8 @@ import { HomePage } from './pages/HomePage'
 import { TextCaptchaPage } from './pages/TextCaptchaPage'
 import { ImageCaptchaPage } from './pages/ImageCaptchaPage'
 import { RecaptchaClickPage } from './pages/RecaptchaClickPage'
+import { MCABenchHomePage } from './pages/MCABenchHomePage'
+import { MCACategoryPage } from './pages/MCACategoryPage'
 import { PlaceholderPage } from './pages/PlaceholderPage'
 
 function App() {
@@ -13,6 +15,8 @@ function App() {
       <Route path="/captcha/text" element={<TextCaptchaPage />} />
       <Route path="/captcha/image" element={<ImageCaptchaPage />} />
       <Route path="/captcha/recaptcha-click" element={<RecaptchaClickPage />} />
+      <Route path="/captcha/mca" element={<MCABenchHomePage />} />
+      <Route path="/captcha/mca/:categoryKey" element={<MCACategoryPage />} />
       <Route
         path="/captcha/placeholder/:slug"
         element={<PlaceholderPage />}

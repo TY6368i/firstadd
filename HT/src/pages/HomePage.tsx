@@ -32,6 +32,13 @@ const items: CaptchaItem[] = [
     tag: '기본',
   },
   {
+    title: 'MCA-Bench (20종목)',
+    desc: 'Kaggle MCA-Bench 데이터셋 기반. 3×3 그리드, 슬라이더, 문자 인식 등 20가지 캡차 종목별 연습.',
+    to: '/captcha/mca',
+    live: true,
+    tag: 'MCA-Bench',
+  },
+  {
     title: '최신 기술 #1 (준비중)',
     desc: '나중에 추가할 캡차. 지금은 빈공간(준비중)으로 연결돼요.',
     to: '/captcha/placeholder/modern-1',

@@ -1,0 +1,9 @@
+{
+  "name": "capstone",
+  "private": true,
+  "scripts": {
+    "download-mca": "python scripts/download_mca_bench.py",
+    "dev": "npm run dev --prefix HT",
+    "build": "npm run build --prefix HT"
+  }
+}

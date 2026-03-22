@@ -1,0 +1,117 @@
+[
+  {
+    "name": "3×3 grid selection",
+    "count": 5500,
+    "samples": []
+  },
+  {
+    "name": "3×3 jigsaw-swap selection",
+    "count": 6505,
+    "samples": []
+  },
+  {
+    "name": "alignment sliders",
+    "count": 5007,
+    "samples": [
+      "1746643338_CONCAT_bg.png",
+      "1746643385_CONCAT_bg.png"
+    ]
+  },
+  {
+    "name": "arithmetic‐character CAPTCHA",
+    "count": 5000,
+    "samples": []
+  },
+  {
+    "name": "arithmetic‐selection",
+    "count": 5064,
+    "samples": []
+  },
+  {
+    "name": "brightness discrimination",
+    "count": 5377,
+    "samples": []
+  },
+  {
+    "name": "classic character CAPTCHA",
+    "count": 99997,
+    "samples": [
+      "002Bf9.png",
+      "002qcB.png"
+    ]
+  },
+  {
+    "name": "color discrimination",
+    "count": 5000,
+    "samples": []
+  },
+  {
+    "name": "commonsense reasoning",
+    "count": 1,
+    "samples": []
+  },
+  {
+    "name": "distorted‐word CAPTCHA",
+    "count": 5000,
+    "samples": []
+  },
+  {
+    "name": "full-image grid selection",
+    "count": 5015,
+    "samples": []
+  },
+  {
+    "name": "geometric‐shape recognition",
+    "count": 5895,
+    "samples": []
+  },
+  {
+    "name": "hollow‐pattern recognition",
+    "count": 5000,
+    "samples": []
+  },
+  {
+    "name": "inverted‐letter selection",
+    "count": 10000,
+    "samples": [
+      "00000.jpg",
+      "00001.jpg"
+    ]
+  },
+  {
+    "name": "rotated‐letter selection",
+    "count": 5015,
+    "samples": []
+  },
+  {
+    "name": "rotation‐block",
+    "count": 10083,
+    "samples": [
+      "1746548342_ROTATE_bg.png",
+      "1746548342_ROTATE_tg.png"
+    ]
+  },
+  {
+    "name": "sequential‐letter ordering",
+    "count": 4816,
+    "samples": []
+  },
+  {
+    "name": "sliding‐block",
+    "count": 10025,
+    "samples": [
+      "1746521268_SLIDER_bg.png",
+      "1746521268_SLIDER_tg.png"
+    ]
+  },
+  {
+    "name": "text‐based arithmetic",
+    "count": 1,
+    "samples": []
+  },
+  {
+    "name": "vowel selection",
+    "count": 5322,
+    "samples": []
+  }
+]
