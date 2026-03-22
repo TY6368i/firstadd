@@ -9,6 +9,11 @@ import {
   type MCATextCategory,
 } from '../lib/mcaBench'
 import { getCategoryKo } from '../lib/mcaBenchCategoryKo'
+import {
+  buildMixedClickRegions,
+  targetIndexSet,
+  type ClickRegion,
+} from '../lib/mcaBenchClickRegions'
 
 function setsEqual(a: Set<number>, b: Set<number>): boolean {
   if (a.size !== b.size) return false
@@ -34,6 +39,7 @@ function GridOnImage({
       style={{
         position: 'absolute',
         inset: 0,
+        zIndex: 1,
         display: 'grid',
         gridTemplateColumns: 'repeat(3, 1fr)',
         gridTemplateRows: 'repeat(3, 1fr)',
@@ -69,8 +75,9 @@ function GridOnImage({
   )
 }
 
-function ClickBoxOverlay({
-  boxes,
+/** 정답·오답 후보가 같은 스타일로 보이고, 정답 보기 시에만 색으로 구분 */
+function MixedRegionsOverlay({
+  regions,
   naturalW,
   naturalH,
   selected,
@@ -78,7 +85,7 @@ function ClickBoxOverlay({
   showSolution,
   disabled,
 }: {
-  boxes: number[][]
+  regions: ClickRegion[]
   naturalW: number
   naturalH: number
   selected: Set<number>
@@ -88,32 +95,54 @@ function ClickBoxOverlay({
 }) {
   return (
     <>
-      {boxes.map((b, i) => {
-        const [x1, y1, x2, y2] = b
+      {regions.map((r, i) => {
+        const [x1, y1, x2, y2] = r.box
         const on = selected.has(i)
+        const isTarget = r.isTarget
+
+        let border = '2px dashed rgba(255,255,255,0.52)'
+        let background = 'rgba(255,255,255,0.07)'
+
+        if (showSolution) {
+          if (isTarget) {
+            border = '3px solid rgba(34,197,94,0.95)'
+            background = 'rgba(34,197,94,0.26)'
+          } else {
+            border = '2px dashed rgba(248,113,113,0.85)'
+            background = 'rgba(248,113,113,0.12)'
+          }
+        } else if (on) {
+          border = '3px solid rgba(147,197,253,0.95)'
+          background = 'rgba(147,197,253,0.22)'
+        }
+
         return (
           <button
             key={i}
             type="button"
             disabled={disabled}
             onClick={() => onToggle(i)}
+            title={showSolution ? (isTarget ? '정답 영역' : '방해(오답) 영역') : '선택/해제'}
             style={{
               position: 'absolute',
+              zIndex: 1,
               left: `${(x1 / naturalW) * 100}%`,
               top: `${(y1 / naturalH) * 100}%`,
               width: `${((x2 - x1) / naturalW) * 100}%`,
               height: `${((y2 - y1) / naturalH) * 100}%`,
-              border: on
-                ? '3px solid rgba(34,197,94,0.95)'
-                : '2px dashed rgba(255,255,255,0.55)',
-              background:
-                showSolution || on
-                  ? 'rgba(34,197,94,0.28)'
-                  : 'rgba(255,255,255,0.06)',
+              border,
+              background,
               cursor: disabled ? 'default' : 'pointer',
               padding: 0,
             }}
             aria-pressed={on}
+            aria-label={
+              showSolution
+                ? isTarget
+                  ? `정답 후보 ${i + 1}`
+                  : `방해 후보 ${i + 1}`
+                : `선택 가능 영역 ${i + 1}`
+            }
           />
         )
       })}
@@ -296,12 +325,25 @@ function ImageCategoryPractice({ category }: { category: MCACategory }) {
     () => new Set(puzzle.gridIndices ?? []),
     [puzzle.gridIndices],
   )
-  const boxCount = puzzle.boxes?.length ?? 0
-  const expectedBoxes = useMemo(() => {
-    const s = new Set<number>()
-    for (let i = 0; i < boxCount; i += 1) s.add(i)
-    return s
-  }, [boxCount])
+
+  const regionSeed = useMemo(() => {
+    let h = 0
+    const s = `${category.key}\0${index}\0${imageUrl}`
+    for (let i = 0; i < s.length; i += 1) {
+      h = (Math.imul(31, h) + s.charCodeAt(i)) | 0
+    }
+    return Math.abs(h) || 1
+  }, [category.key, index, imageUrl])
+
+  const mixedRegions = useMemo(() => {
+    if (!puzzle.boxes?.length || !imgNatural) return []
+    return buildMixedClickRegions(puzzle.boxes, imgNatural.w, imgNatural.h, regionSeed)
+  }, [puzzle.boxes, imgNatural, regionSeed])
+
+  const expectedTargetIndices = useMemo(
+    () => targetIndexSet(mixedRegions),
+    [mixedRegions],
+  )
 
   function resetRound() {
     setSelectedGrid(new Set())
@@ -348,8 +390,8 @@ function ImageCategoryPractice({ category }: { category: MCACategory }) {
       if (interaction === 'grid_3x3_two' && puzzle.gridIndices?.length === 2) {
         ok = setsEqual(selectedGrid, expectedGrid)
       }
-    } else if (interaction === 'click_boxes' && puzzle.boxes?.length) {
-      ok = setsEqual(selectedBoxes, expectedBoxes)
+    } else if (interaction === 'click_boxes' && mixedRegions.length > 0) {
+      ok = setsEqual(selectedBoxes, expectedTargetIndices)
     } else if (interaction === 'text' && puzzle.expectedText != null) {
       ok = normText(textAns) === normText(puzzle.expectedText)
     } else {
@@ -410,12 +452,20 @@ function ImageCategoryPractice({ category }: { category: MCACategory }) {
               position: 'relative',
               maxWidth: '100%',
               lineHeight: 0,
+              zIndex: 0,
             }}
           >
             <img
               src={imageUrl}
               alt={ko.titleKo}
-              style={{ maxWidth: '100%', height: 'auto', display: 'block' }}
+              style={{
+                maxWidth: '100%',
+                height: 'auto',
+                display: 'block',
+                pointerEvents: showGrid || (showBoxes && mixedRegions.length > 0) ? 'none' : 'auto',
+                userSelect: 'none',
+              }}
+              draggable={false}
               onLoad={(e) => {
                 const el = e.currentTarget
                 setImgNatural({ w: el.naturalWidth, h: el.naturalHeight })
@@ -424,9 +474,9 @@ function ImageCategoryPractice({ category }: { category: MCACategory }) {
             {showGrid ? (
               <GridOnImage selected={selectedGrid} onToggle={toggleGrid} />
             ) : null}
-            {showBoxes && imgNatural && puzzle.boxes ? (
-              <ClickBoxOverlay
-                boxes={puzzle.boxes}
+            {showBoxes && imgNatural && mixedRegions.length > 0 ? (
+              <MixedRegionsOverlay
+                regions={mixedRegions}
                 naturalW={imgNatural.w}
                 naturalH={imgNatural.h}
                 selected={selectedBoxes}
@@ -444,7 +494,10 @@ function ImageCategoryPractice({ category }: { category: MCACategory }) {
             </p>
           ) : null}
           {showBoxes ? (
-            <p className="hint">정답 영역(라벨 기준)을 모두 클릭해 선택하세요.</p>
+            <p className="hint">
+              점선 사각형은 모두 눌 수 있습니다. 과제 지시에 맞는 영역만 골라 모두 선택하세요. (일부는
+              방해용 오답 후보입니다.)
+            </p>
           ) : null}
 
           {showTextInput ? (
@@ -469,18 +522,51 @@ function ImageCategoryPractice({ category }: { category: MCACategory }) {
           !showGrid &&
           !showBoxes &&
           !showTextInput ? (
-            <p className="hint">
-              이 샘플은 라벨이 없거나 자동 채점이 어렵습니다. 이미지를 참고해 연습하세요.
+            <aside
+              role="note"
+              aria-label="연습 전용 안내"
+              className="panel"
+              style={{
+                width: '100%',
+                maxWidth: 560,
+                alignSelf: 'stretch',
+                border: '2px solid rgba(251, 191, 36, 0.55)',
+                background: 'rgba(251, 191, 36, 0.12)',
+                boxShadow: '0 0 0 1px rgba(0,0,0,0.08)',
+              }}
+            >
+              <p
+                style={{
+                  margin: 0,
+                  fontSize: 12,
+                  fontWeight: 700,
+                  letterSpacing: '0.04em',
+                  textTransform: 'uppercase',
+                  color: 'rgba(251, 191, 36, 0.95)',
+                }}
+              >
+                연습 전용 · 자동 채점 없음
+              </p>
+              <p className="cardDesc" style={{ margin: '10px 0 0' }}>
+                이 샘플은 라벨이 없거나 자동 채점이 어렵습니다. 이미지를 참고해 연습하세요.
+              </p>
               {puzzle.answerHint ? (
-                <>
-                  <br />
-                  <span style={{ marginTop: 8, display: 'inline-block' }}>
-                    참고: {puzzle.answerHint.slice(0, 400)}
+                <div
+                  style={{
+                    marginTop: 12,
+                    padding: 10,
+                    borderRadius: 10,
+                    background: 'rgba(0,0,0,0.22)',
+                  }}
+                >
+                  <p style={{ margin: 0, fontWeight: 600, fontSize: 13 }}>참고 (라벨 일부)</p>
+                  <p className="hint" style={{ margin: '6px 0 0', whiteSpace: 'pre-wrap' }}>
+                    {puzzle.answerHint.slice(0, 400)}
                     {puzzle.answerHint.length > 400 ? '…' : ''}
-                  </span>
-                </>
+                  </p>
+                </div>
               ) : null}
-            </p>
+            </aside>
           ) : null}
 
           <div className="row" style={{ flexWrap: 'wrap', gap: 8 }}>
@@ -522,8 +608,11 @@ function ImageCategoryPractice({ category }: { category: MCACategory }) {
               정답 텍스트: <b>{puzzle.expectedText}</b>
             </p>
           ) : null}
-          {showSolution && showBoxes && puzzle.boxes?.length ? (
-            <p className="hint">녹색으로 표시된 영역이 라벨상 정답 클릭 구역입니다.</p>
+          {showSolution && showBoxes && mixedRegions.length > 0 ? (
+            <p className="hint">
+              <b style={{ color: 'rgba(34,197,94,0.95)' }}>녹색 실선</b> = 데이터셋 기준 정답 영역,{' '}
+              <b style={{ color: 'rgba(248,113,113,0.95)' }}>빨간 점선</b> = 연습용 방해(오답) 영역입니다.
+            </p>
           ) : null}
 
           {feedback === 'ok' ? (
