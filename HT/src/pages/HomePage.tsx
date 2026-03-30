@@ -39,10 +39,10 @@ const items: CaptchaItem[] = [
     tag: 'MCA-Bench',
   },
   {
-    title: '최신 기술 #1 (준비중)',
-    desc: '나중에 추가할 캡차. 지금은 빈공간(준비중)으로 연결돼요.',
-    to: '/captcha/placeholder/modern-1',
-    live: false,
+    title: '최신 기술 #1 (reCAPTCHA v3)',
+    desc: 'v3 점수 기반 검증. 토큰 발급 후 서버(siteverify) 검증 흐름을 연습합니다.',
+    to: '/captcha/recaptcha-v3',
+    live: true,
     tag: '최신',
   },
   {
@@ -63,33 +63,47 @@ export function HomePage() {
       <section className="hero">
         <h1 className="h1">캡차 연습</h1>
         <p className="lead">
-          아래 5가지 중 하나를 골라 연습하세요. (현재는 <b>기본 3개</b>만
-          동작합니다.)
+          아래 항목 중 동작하는 종류만 선택해 연습하세요.
         </p>
       </section>
 
       <section className="grid" aria-label="캡차 종류 목록">
-        {items.map((it) => (
-          <Link key={it.to} className="card" to={it.to}>
-            <div className="cardInner">
-              <div className="cardTop">
-                <h2 className="cardTitle">{it.title}</h2>
-                <span className={`badge ${it.live ? 'badgeLive' : ''}`}>
-                  {it.live ? '사용 가능' : '준비중'} · {it.tag}
-                </span>
+        {items.map((it) =>
+          it.live ? (
+            <Link key={it.to} className="card" to={it.to}>
+              <div className="cardInner">
+                <div className="cardTop">
+                  <h2 className="cardTitle">{it.title}</h2>
+                  <span className="badge badgeLive">사용 가능 · {it.tag}</span>
+                </div>
+                <p className="cardDesc">{it.desc}</p>
+                <div className="btnRow">
+                  <span className="btn btnPrimary">들어가기</span>
+                  <span className="hint">지금 풀 수 있어요</span>
+                </div>
               </div>
-              <p className="cardDesc">{it.desc}</p>
-              <div className="btnRow">
-                <span className={`btn ${it.live ? 'btnPrimary' : ''}`}>
-                  들어가기
-                </span>
-                <span className="hint">
-                  {it.live ? '지금 풀 수 있어요' : '눌러서 준비중 화면으로 이동'}
-                </span>
+            </Link>
+          ) : (
+            <article
+              key={it.to}
+              className="card"
+              aria-disabled="true"
+              style={{ opacity: 0.65, cursor: 'not-allowed' }}
+            >
+              <div className="cardInner">
+                <div className="cardTop">
+                  <h2 className="cardTitle">{it.title}</h2>
+                  <span className="badge">준비중 · {it.tag}</span>
+                </div>
+                <p className="cardDesc">{it.desc}</p>
+                <div className="btnRow">
+                  <span className="btn">준비중</span>
+                  <span className="hint">현재는 들어갈 수 없어요</span>
+                </div>
               </div>
-            </div>
-          </Link>
-        ))}
+            </article>
+          ),
+        )}
       </section>
     </AppShell>
   )
