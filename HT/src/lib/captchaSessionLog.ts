@@ -36,40 +36,42 @@ export async function saveCaptchaSessionWithPointers(
     ...sessionRest
   } = input
 
-  const { data: sessionRow, error: sessionErr } = await client
-    .from('captcha_sessions')
-    .insert({
-      page_url: sessionRest.pageUrl,
-      action: sessionRest.action,
-      recaptcha_ok: recaptchaOk,
-      recaptcha_score: recaptchaScore,
-      recaptcha_hostname: recaptchaHostname,
-      user_agent: sessionRest.userAgent,
-      viewport_w: sessionRest.viewportW,
-      viewport_h: sessionRest.viewportH,
-      started_at_ms: sessionRest.startedAtMs,
-      ended_at_ms: sessionRest.endedAtMs,
-      event_count: pointers.length,
-      meta: meta ?? {},
-    })
-    .select('id')
-    .single()
+  // INSERT … RETURNING(.select())은 RLS에서 SELECT 정책이 없으면 실패합니다.
+  // 세션 행만 생기고 batches insert까지 못 가는 경우가 많아, id는 클라이언트에서 고정합니다.
+  const sessionId = crypto.randomUUID()
+
+  const { error: sessionErr } = await client.from('captcha_sessions').insert({
+    id: sessionId,
+    page_url: sessionRest.pageUrl,
+    action: sessionRest.action,
+    recaptcha_ok: recaptchaOk,
+    recaptcha_score: recaptchaScore,
+    recaptcha_hostname: recaptchaHostname,
+    user_agent: sessionRest.userAgent,
+    viewport_w: sessionRest.viewportW,
+    viewport_h: sessionRest.viewportH,
+    started_at_ms: sessionRest.startedAtMs,
+    ended_at_ms: sessionRest.endedAtMs,
+    event_count: pointers.length,
+    meta: meta ?? {},
+  })
 
   if (sessionErr) {
-    return { error: sessionErr.message }
-  }
-  if (!sessionRow?.id) {
-    return { error: 'insert returned no id' }
+    return {
+      error: `[captcha_sessions] ${sessionErr.message}${sessionErr.code ? ` (${sessionErr.code})` : ''}`,
+    }
   }
 
   const { error: batchErr } = await client.from('captcha_pointer_batches').insert({
-    session_id: sessionRow.id,
+    session_id: sessionId,
     points: pointers,
   })
 
   if (batchErr) {
-    return { error: batchErr.message }
+    return {
+      error: `[captcha_pointer_batches] ${batchErr.message}${batchErr.code ? ` (${batchErr.code})` : ''}`,
+    }
   }
 
-  return { sessionId: sessionRow.id }
+  return { sessionId }
 }
