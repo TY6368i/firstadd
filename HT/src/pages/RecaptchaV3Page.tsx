@@ -1,6 +1,7 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { AppShell } from '../components/AppShell'
+import { saveCaptchaSessionWithPointers, type PointerSample } from '../lib/captchaSessionLog'
 import { supabase } from '../lib/supabaseClient'
 
 declare global {
@@ -54,6 +55,8 @@ async function getRecaptchaToken(siteKey: string, action: string): Promise<strin
   })
 }
 
+const MOVE_INTERVAL_MS = 50
+
 export function RecaptchaV3Page() {
   const siteKey = (import.meta.env.VITE_RECAPTCHA_SITE_KEY as string | undefined)?.trim() ?? ''
   const [token, setToken] = useState('')
@@ -61,8 +64,49 @@ export function RecaptchaV3Page() {
   const [result, setResult] = useState<'idle' | 'ok' | 'bad' | 'error'>('idle')
   const [detail, setDetail] = useState('')
   const [loading, setLoading] = useState(false)
+  const [persistHint, setPersistHint] = useState('')
+
+  const pointersRef = useRef<PointerSample[]>([])
+  const perfStartRef = useRef<number>(0)
+  const wallStartRef = useRef<number>(0)
+  const lastMoveAtRef = useRef<number>(0)
 
   const ready = useMemo(() => Boolean(siteKey), [siteKey])
+
+  function pushSample(e: PointerEvent, k: PointerSample['k']) {
+    const t = Math.round(performance.now() - perfStartRef.current)
+    pointersRef.current.push({
+      t,
+      x: Math.round(e.clientX),
+      y: Math.round(e.clientY),
+      k,
+    })
+  }
+
+  useEffect(() => {
+    perfStartRef.current = performance.now()
+    wallStartRef.current = Date.now()
+    lastMoveAtRef.current = 0
+
+    const onMove = (e: PointerEvent) => {
+      const now = performance.now()
+      if (now - lastMoveAtRef.current < MOVE_INTERVAL_MS) return
+      lastMoveAtRef.current = now
+      pushSample(e, 'move')
+    }
+    const onDown = (e: PointerEvent) => pushSample(e, 'down')
+    const onUp = (e: PointerEvent) => pushSample(e, 'up')
+
+    window.addEventListener('pointermove', onMove, { passive: true })
+    window.addEventListener('pointerdown', onDown, { passive: true })
+    window.addEventListener('pointerup', onUp, { passive: true })
+
+    return () => {
+      window.removeEventListener('pointermove', onMove)
+      window.removeEventListener('pointerdown', onDown)
+      window.removeEventListener('pointerup', onUp)
+    }
+  }, [])
 
   async function verifyOnBackend(tk: string) {
     // 1) Supabase Edge Function 우선
@@ -94,6 +138,16 @@ export function RecaptchaV3Page() {
     setLoading(true)
     setDetail('')
     setResult('idle')
+    setPersistHint('')
+
+    const startedAtMs = wallStartRef.current
+    const pointerSnapshot = (): PointerSample[] => [...pointersRef.current]
+
+    let recaptchaOk: boolean | null = null
+    let recaptchaScore: number | null = null
+    let recaptchaHostname: string | null = null
+    const meta: Record<string, unknown> = { path: window.location.pathname }
+
     try {
       const tk = await getRecaptchaToken(siteKey, 'submit')
       setToken(tk)
@@ -103,22 +157,76 @@ export function RecaptchaV3Page() {
         score?: number
         error?: string
         reasons?: string[]
+        raw?: {
+          success?: boolean
+          score?: number
+          action?: string
+          hostname?: string
+          'error-codes'?: string[]
+        }
       }
-      setScore(typeof data.score === 'number' ? data.score : null)
+      recaptchaScore = typeof data.score === 'number' ? data.score : null
+      const host =
+        data.raw && typeof data.raw.hostname === 'string' ? data.raw.hostname : null
+      recaptchaHostname = host
+
+      if (data.raw) {
+        meta.google_raw = data.raw
+      }
+
+      setScore(recaptchaScore)
       if (backend.ok && data.success) {
+        recaptchaOk = true
         setResult('ok')
       } else if (backend.ok) {
+        recaptchaOk = false
+        meta.reasons = data.reasons
         setResult('bad')
         setDetail(data.reasons?.join(', ') || '검증 점수가 기준 이하입니다.')
       } else {
+        recaptchaOk = false
+        meta.backend_error = data.error
         setResult('error')
         setDetail(data.error || '서버 검증 실패')
       }
     } catch (e) {
+      recaptchaOk = false
+      meta.exception = e instanceof Error ? e.message : String(e)
       setResult('error')
       setDetail(e instanceof Error ? e.message : '알 수 없는 오류')
     } finally {
       setLoading(false)
+      const endedAtMs = Date.now()
+      const pointers = pointerSnapshot()
+
+      if (supabase) {
+        const saveResult = await saveCaptchaSessionWithPointers(supabase, {
+          pageUrl: window.location.href,
+          action: 'submit',
+          startedAtMs,
+          endedAtMs,
+          userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : '',
+          viewportW: window.innerWidth,
+          viewportH: window.innerHeight,
+          pointers,
+          recaptchaOk,
+          recaptchaScore,
+          recaptchaHostname,
+          meta,
+        })
+        if ('error' in saveResult) {
+          setPersistHint(`DB 저장 실패: ${saveResult.error}`)
+        } else {
+          setPersistHint(`DB 저장 완료 · session ${saveResult.sessionId.slice(0, 8)}…`)
+        }
+      } else {
+        setPersistHint('Supabase 미설정이라 DB에는 저장하지 않았습니다.')
+      }
+
+      pointersRef.current = []
+      perfStartRef.current = performance.now()
+      wallStartRef.current = Date.now()
+      lastMoveAtRef.current = 0
     }
   }
 
@@ -164,6 +272,7 @@ export function RecaptchaV3Page() {
         {result === 'ok' ? <p className="statusOk">[성공] 통과</p> : null}
         {result === 'bad' ? <p className="statusBad">통과 실패: {detail}</p> : null}
         {result === 'error' ? <p className="statusBad">오류: {detail}</p> : null}
+        {persistHint ? <p className="hint">{persistHint}</p> : null}
       </section>
     </AppShell>
   )

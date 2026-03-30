@@ -39,3 +39,48 @@ begin
   end if;
 end $$;
 
+-- ---------------------------------------------------------------------------
+-- reCAPTCHA v3 sessions + pointer traces
+-- 테이블은 SQL Editor에서 직접 만든 뒤, 아래 블록으로 RLS·anon INSERT를 켭니다.
+-- ---------------------------------------------------------------------------
+do $$
+begin
+  if exists (
+    select 1 from information_schema.tables
+    where table_schema = 'public' and table_name = 'captcha_sessions'
+  ) then
+    execute 'alter table public.captcha_sessions enable row level security';
+    if not exists (
+      select 1 from pg_policies
+      where schemaname = 'public'
+        and tablename = 'captcha_sessions'
+        and policyname = 'anon_insert_captcha_sessions'
+    ) then
+      create policy anon_insert_captcha_sessions
+        on public.captcha_sessions
+        for insert
+        to anon
+        with check (true);
+    end if;
+  end if;
+
+  if exists (
+    select 1 from information_schema.tables
+    where table_schema = 'public' and table_name = 'captcha_pointer_batches'
+  ) then
+    execute 'alter table public.captcha_pointer_batches enable row level security';
+    if not exists (
+      select 1 from pg_policies
+      where schemaname = 'public'
+        and tablename = 'captcha_pointer_batches'
+        and policyname = 'anon_insert_captcha_pointer_batches'
+    ) then
+      create policy anon_insert_captcha_pointer_batches
+        on public.captcha_pointer_batches
+        for insert
+        to anon
+        with check (true);
+    end if;
+  end if;
+end $$;
+
