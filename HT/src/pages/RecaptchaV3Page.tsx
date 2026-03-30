@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { AppShell } from '../components/AppShell'
+import { supabase } from '../lib/supabaseClient'
 
 declare global {
   interface Window {
@@ -63,6 +64,31 @@ export function RecaptchaV3Page() {
 
   const ready = useMemo(() => Boolean(siteKey), [siteKey])
 
+  async function verifyOnBackend(tk: string) {
+    // 1) Supabase Edge Function 우선
+    if (supabase) {
+      const { data, error } = await supabase.functions.invoke('recaptcha-verify', {
+        body: { token: tk, action: 'submit' },
+      })
+      if (error) {
+        throw new Error(`supabase_function_error: ${error.message}`)
+      }
+      return { ok: true as const, data: data as Record<string, unknown> }
+    }
+
+    // 2) fallback: Vercel API
+    const res = await fetch('/api/recaptcha-verify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: tk, action: 'submit' }),
+    })
+    const data = (await res.json()) as Record<string, unknown>
+    if (!res.ok) {
+      return { ok: false as const, data }
+    }
+    return { ok: true as const, data }
+  }
+
   async function verify() {
     if (!siteKey) return
     setLoading(true)
@@ -71,22 +97,17 @@ export function RecaptchaV3Page() {
     try {
       const tk = await getRecaptchaToken(siteKey, 'submit')
       setToken(tk)
-
-      const res = await fetch('/api/recaptcha-verify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token: tk, action: 'submit' }),
-      })
-      const data = (await res.json()) as {
+      const backend = await verifyOnBackend(tk)
+      const data = backend.data as {
         success?: boolean
         score?: number
         error?: string
         reasons?: string[]
       }
       setScore(typeof data.score === 'number' ? data.score : null)
-      if (res.ok && data.success) {
+      if (backend.ok && data.success) {
         setResult('ok')
-      } else if (res.ok) {
+      } else if (backend.ok) {
         setResult('bad')
         setDetail(data.reasons?.join(', ') || '검증 점수가 기준 이하입니다.')
       } else {
@@ -106,7 +127,8 @@ export function RecaptchaV3Page() {
       <section className="hero">
         <h1 className="h1">reCAPTCHA v3</h1>
         <p className="lead">
-          버튼을 누르면 토큰을 발급하고 Vercel 서버 함수에서 Google siteverify로 검증합니다.
+          버튼을 누르면 토큰을 발급하고 Supabase Edge Function(없으면 Vercel API fallback)에서
+          Google siteverify로 검증합니다.
         </p>
       </section>
 
