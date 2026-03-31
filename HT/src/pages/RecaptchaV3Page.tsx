@@ -135,6 +135,7 @@ export function RecaptchaV3Page() {
 
   async function verify() {
     if (!siteKey) return
+    console.log('[recaptcha-db] 사람 검증 실행 클릭', { siteKeySet: true, supabaseClient: Boolean(supabase) })
     setLoading(true)
     setDetail('')
     setResult('idle')
@@ -199,7 +200,13 @@ export function RecaptchaV3Page() {
       const endedAtMs = Date.now()
       const pointers = pointerSnapshot()
 
+      console.log('[recaptcha-db] verify finally', {
+        supabaseClient: Boolean(supabase),
+        pointerCount: pointers.length,
+      })
+
       if (supabase) {
+        console.log('[recaptcha-db] Supabase 저장 호출 직전')
         const saveResult = await saveCaptchaSessionWithPointers(supabase, {
           pageUrl: window.location.href,
           action: 'submit',
@@ -215,11 +222,16 @@ export function RecaptchaV3Page() {
           meta,
         })
         if ('error' in saveResult) {
+          console.warn('[recaptcha-db] 저장 실패(반환):', saveResult.error)
           setPersistHint(`DB 저장 실패: ${saveResult.error}`)
         } else {
+          console.log('[recaptcha-db] 저장 성공(반환):', saveResult.sessionId)
           setPersistHint(`DB 저장 완료 · session ${saveResult.sessionId.slice(0, 8)}…`)
         }
       } else {
+        console.warn(
+          '[recaptcha-db] supabase 클라이언트 없음 — 빌드 시 VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY(또는 NEXT_PUBLIC_* )가 비어 있을 수 있음',
+        )
         setPersistHint('Supabase 미설정이라 DB에는 저장하지 않았습니다.')
       }
 

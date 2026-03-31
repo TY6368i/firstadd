@@ -40,6 +40,13 @@ export async function saveCaptchaSessionWithPointers(
   // 세션 행만 생기고 batches insert까지 못 가는 경우가 많아, id는 클라이언트에서 고정합니다.
   const sessionId = crypto.randomUUID()
 
+  console.log('[recaptcha-db] save start', {
+    sessionId,
+    pointerCount: pointers.length,
+    recaptchaOk,
+    recaptchaScore,
+  })
+
   const { error: sessionErr } = await client.from('captcha_sessions').insert({
     id: sessionId,
     page_url: sessionRest.pageUrl,
@@ -56,7 +63,10 @@ export async function saveCaptchaSessionWithPointers(
     meta: meta ?? {},
   })
 
+  console.log('[recaptcha-db] session result:', sessionErr ?? 'ok')
+
   if (sessionErr) {
+    console.log('[recaptcha-db] save done (aborted after session):', sessionId)
     return {
       error: `[captcha_sessions] ${sessionErr.message}${sessionErr.code ? ` (${sessionErr.code})` : ''}`,
     }
@@ -67,11 +77,15 @@ export async function saveCaptchaSessionWithPointers(
     points: pointers,
   })
 
+  console.log('[recaptcha-db] batch result:', batchErr ?? 'ok')
+
   if (batchErr) {
+    console.log('[recaptcha-db] save done (aborted after batch):', sessionId)
     return {
       error: `[captcha_pointer_batches] ${batchErr.message}${batchErr.code ? ` (${batchErr.code})` : ''}`,
     }
   }
 
+  console.log('[recaptcha-db] save done:', sessionId)
   return { sessionId }
 }
