@@ -108,29 +108,52 @@ export function RecaptchaV3Page() {
     }
   }, [])
 
-  async function verifyOnBackend(tk: string) {
-    // 1) Supabase Edge Function 우선
+  type VerifyVia = 'supabase_edge' | 'vercel_api'
+
+  async function verifyOnBackend(tk: string): Promise<
+    | { ok: true; data: Record<string, unknown>; via: VerifyVia }
+    | { ok: false; data: Record<string, unknown>; via: VerifyVia }
+  > {
+    const body = { token: tk, action: 'submit' as const }
+
     if (supabase) {
       const { data, error } = await supabase.functions.invoke('recaptcha-verify', {
-        body: { token: tk, action: 'submit' },
+        body,
       })
-      if (error) {
-        throw new Error(`supabase_function_error: ${error.message}`)
+      if (!error && data && typeof data === 'object') {
+        return { ok: true, data: data as Record<string, unknown>, via: 'supabase_edge' }
       }
-      return { ok: true as const, data: data as Record<string, unknown> }
+      console.warn(
+        '[recaptcha-verify] Edge Function 실패 → Vercel API로 재시도:',
+        error?.message ?? '(no message)',
+      )
     }
 
-    // 2) fallback: Vercel API
-    const res = await fetch('/api/recaptcha-verify', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ token: tk, action: 'submit' }),
-    })
-    const data = (await res.json()) as Record<string, unknown>
-    if (!res.ok) {
-      return { ok: false as const, data }
+    try {
+      const res = await fetch('/api/recaptcha-verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      })
+      let data: Record<string, unknown> = {}
+      try {
+        data = (await res.json()) as Record<string, unknown>
+      } catch {
+        data = { error: 'Invalid JSON from /api/recaptcha-verify' }
+      }
+      if (!res.ok) {
+        return { ok: false, data, via: 'vercel_api' }
+      }
+      return { ok: true, data, via: 'vercel_api' }
+    } catch (e) {
+      return {
+        ok: false,
+        data: {
+          error: e instanceof Error ? e.message : 'fetch /api/recaptcha-verify failed',
+        },
+        via: 'vercel_api',
+      }
     }
-    return { ok: true as const, data }
   }
 
   async function verify() {
@@ -153,6 +176,7 @@ export function RecaptchaV3Page() {
       const tk = await getRecaptchaToken(siteKey, 'submit')
       setToken(tk)
       const backend = await verifyOnBackend(tk)
+      meta.verify_backend = backend.via
       const data = backend.data as {
         success?: boolean
         score?: number
