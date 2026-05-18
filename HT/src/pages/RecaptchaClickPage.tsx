@@ -15,7 +15,10 @@ export function RecaptchaClickPage() {
   const [round, setRound] = useState(0)
   const [startedAt, setStartedAt] = useState(() => performance.now())
 
-  const etaMs = useMemo(() => randomInt(900, 2000), [round])
+  const etaMs = useMemo(() => {
+    void round
+    return randomInt(900, 2000)
+  }, [round])
 
   async function start() {
     setOpen(true)

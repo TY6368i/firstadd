@@ -46,6 +46,13 @@ const items: CaptchaItem[] = [
     tag: '최신',
   },
   {
+    title: '행동 분석 (XGB · 별도)',
+    desc: 'cap 3칸 UI — 행동 8특징, XGB v2(scaler+모델), 궤적 XGB. Vercel /api/validator 검증.',
+    to: '/captcha/pointer-xgb',
+    live: true,
+    tag: 'XGB',
+  },
+  {
     title: '최신 기술 #2 (준비중)',
     desc: '나중에 추가할 캡차. 지금은 빈공간(준비중)으로 연결돼요.',
     to: '/captcha/placeholder/modern-2',
@@ -58,7 +65,7 @@ export function HomePage() {
   return (
     <AppShell
       title="CAPTCHA 연습장"
-      subtitle="종류별로 캡차를 직접 풀어보는 연습 사이트 (3개 구현, 2개 준비중)"
+      subtitle="종류별로 캡차·행동 분석을 직접 연습하는 사이트"
     >
       <section className="hero">
         <h1 className="h1">캡차 연습</h1>

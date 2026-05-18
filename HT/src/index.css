@@ -268,6 +268,155 @@ a {
   color: rgba(248, 113, 113, 0.95);
 }
 
+/* XGB 3칸 레이아웃 (스케치: cap + 행동특징 / XGB v2 / 궤적 XGB) */
+.xgbCapPage {
+  width: min(960px, 100% - 32px);
+  margin: 0 auto;
+  padding: 28px 0 40px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.xgbCapHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.xgbCapBrand {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.22);
+}
+
+.xgbCapLogo {
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: lowercase;
+}
+
+.xgbCapMark {
+  width: 14px;
+  height: 14px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.xgbCapHome {
+  font-size: 13px;
+  color: var(--muted);
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+}
+
+.xgbCapHome:hover {
+  color: var(--text);
+  border-color: rgba(255, 255, 255, 0.28);
+}
+
+.xgbCapFrame {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: linear-gradient(180deg, var(--card2), var(--card));
+  box-shadow: var(--shadow);
+  padding: 20px;
+  min-height: 360px;
+}
+
+.xgbCapRow {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  flex: 1;
+}
+
+.xgbCapCol {
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: rgba(0, 0, 0, 0.2);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 280px;
+}
+
+.xgbCapColTitle {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.xgbCapColSub {
+  margin: 0;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.xgbCapFeatList,
+.xgbCapMiniList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+}
+
+.xgbCapFeatList li,
+.xgbCapMiniList li {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 4px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.xgbCapFeatKey {
+  color: var(--muted);
+}
+
+.xgbCapFeatVal,
+.xgbCapMiniList span {
+  font-variant-numeric: tabular-nums;
+}
+
+.xgbCapScore {
+  margin: 4px 0 0;
+  font-size: 14px;
+}
+
+.xgbCapScore strong {
+  font-size: 22px;
+  letter-spacing: -0.5px;
+}
+
+.xgbCapVerdict {
+  margin: 0;
+  text-align: center;
+  font-weight: 600;
+}
+
+.xgbCapFooter {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
 @media (max-width: 840px) {
   .card {
     grid-column: span 12;
@@ -278,5 +427,11 @@ a {
   }
   .navRow {
     justify-content: flex-start;
+  }
+  .xgbCapRow {
+    grid-template-columns: 1fr;
+  }
+  .xgbCapCol {
+    min-height: 0;
   }
 }

@@ -65,6 +65,7 @@ export function RecaptchaV3Page() {
   const [detail, setDetail] = useState('')
   const [loading, setLoading] = useState(false)
   const [persistHint, setPersistHint] = useState('')
+  const [xgbHint, setXgbHint] = useState('')
 
   const pointersRef = useRef<PointerSample[]>([])
   const perfStartRef = useRef<number>(0)
@@ -163,6 +164,7 @@ export function RecaptchaV3Page() {
     setDetail('')
     setResult('idle')
     setPersistHint('')
+    setXgbHint('')
 
     const startedAtMs = wallStartRef.current
     const pointerSnapshot = (): PointerSample[] => [...pointersRef.current]
@@ -228,6 +230,43 @@ export function RecaptchaV3Page() {
         supabaseClient: Boolean(supabase),
         pointerCount: pointers.length,
       })
+
+      try {
+        const xgbRes = await fetch('/api/pointer-human-xgb', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ pointers, startedAtMs, endedAtMs }),
+        })
+        const xgbData = (await xgbRes.json()) as {
+          prob_human?: number
+          label?: string
+          mouse_features?: Record<string, number>
+          error?: string
+        }
+        if (xgbRes.ok && typeof xgbData.prob_human === 'number' && xgbData.label) {
+          const ph = xgbData.prob_human
+          const labelKo = xgbData.label === 'human' ? '사람 쪽' : '자동화 쪽'
+          const mv = xgbData.mouse_features?.mean_velocity ?? 0
+          const jitter = xgbData.mouse_features?.mean_jitter ?? 0
+          const pause = xgbData.mouse_features?.pause_ratio ?? 0
+          setXgbHint(
+            `XGB 별도 점수: 사람일 확률 ${ph.toFixed(3)} (${(ph * 100).toFixed(1)}%), 판정 ${labelKo} · mean_velocity ${mv.toFixed(4)}, mean_jitter ${jitter.toFixed(4)}, pause_ratio ${pause.toFixed(3)}`,
+          )
+          meta.pointer_xgb = {
+            prob_human: ph,
+            label: xgbData.label,
+            mouse_features: xgbData.mouse_features ?? {},
+          }
+        } else {
+          const msg = xgbData.error ?? `HTTP ${xgbRes.status}`
+          setXgbHint(`XGB 별도 점수: 오류(${msg})`)
+          meta.pointer_xgb = { error: msg }
+        }
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : 'xgb request failed'
+        setXgbHint(`XGB 별도 점수: 호출 실패(${msg})`)
+        meta.pointer_xgb = { error: msg }
+      }
 
       if (supabase) {
         console.log('[recaptcha-db] Supabase 저장 호출 직전')
@@ -308,6 +347,7 @@ export function RecaptchaV3Page() {
         {result === 'ok' ? <p className="statusOk">[성공] 통과</p> : null}
         {result === 'bad' ? <p className="statusBad">통과 실패: {detail}</p> : null}
         {result === 'error' ? <p className="statusBad">오류: {detail}</p> : null}
+        {xgbHint ? <p className="hint">{xgbHint}</p> : null}
         {persistHint ? <p className="hint">{persistHint}</p> : null}
       </section>
     </AppShell>

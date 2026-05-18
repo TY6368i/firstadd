@@ -31,6 +31,9 @@ export function AppShell(props: {
             <NavLink className="chipLink" to="/captcha/recaptcha-v3">
               reCAPTCHA v3
             </NavLink>
+            <NavLink className="chipLink" to="/captcha/pointer-xgb">
+              행동 XGB
+            </NavLink>
           </nav>
         </header>
 

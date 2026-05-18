@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { startTransition, useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { AppShell } from '../components/AppShell'
 import {
@@ -254,7 +254,7 @@ export function MCACategoryPage() {
 
   useEffect(() => {
     if (!categoryKey) return
-    setLoading(true)
+    startTransition(() => setLoading(true))
     fetchMCAManifest().then((m) => {
       const img = m?.categories.find((c) => c.key === categoryKey) ?? null
       const tx = m?.textCategories?.find((c) => c.key === categoryKey) ?? null
@@ -296,7 +296,7 @@ export function MCACategoryPage() {
 
 function ImageCategoryPractice({ category }: { category: MCACategory }) {
   const ko = getCategoryKo(category.key)
-  const files = category.files ?? []
+  const files = useMemo(() => category.files ?? [], [category.files])
   const puzzles = category.puzzles ?? []
   const urls = useMemo(
     () => getCategoryImageUrls(category.key, files),
